@@ -14,6 +14,9 @@ class TrackerViewHelper : ShipmentObserver {
     var shipmentStatus by mutableStateOf("")
         private set
 
+    var shipmentLocation by mutableStateOf("")
+        private set
+
     var shipmentNotes by mutableStateOf(listOf<String>())
         private set
 
@@ -31,6 +34,7 @@ class TrackerViewHelper : ShipmentObserver {
             // Set some "not found" message for UI to display
             shipmentId = id
             shipmentStatus = "Shipment not found"
+            shipmentLocation = ""
             shipmentNotes = emptyList()
             shipmentUpdateHistory = emptyList()
             expectedShipmentDeliveryDate = ""
@@ -57,6 +61,7 @@ class TrackerViewHelper : ShipmentObserver {
 
     private fun updateStateFromShipment(shipment: Shipment) {
         shipmentStatus = shipment.status
+        shipmentLocation = shipment.currentLocation
         shipmentNotes = shipment.getNotes()
         expectedShipmentDeliveryDate = formatTimestamp(shipment.expectedDeliveryDateTimestamp)
 

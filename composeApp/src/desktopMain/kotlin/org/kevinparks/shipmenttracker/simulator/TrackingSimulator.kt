@@ -50,11 +50,6 @@ object TrackingSimulator {
         }
     }
 
-
-
-
-
-
     private fun processLine(line: String) {
         val parts = line.split(",", limit = 4)
 

@@ -31,6 +31,7 @@ fun ShipmentCard(helper: TrackerViewHelper, onStopTracking: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
             Text("Status: ${helper.shipmentStatus}")
+            Text("Location: ${helper.shipmentLocation}")
             if (helper.expectedShipmentDeliveryDate.isNotBlank()) {
                 Text("Expected Delivery: ${helper.expectedShipmentDeliveryDate}")
             }
