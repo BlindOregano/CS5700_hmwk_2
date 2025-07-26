@@ -1,17 +1,24 @@
 package org.kevinparks.shipmenttracker.strategy
 
+import org.junit.jupiter.api.Test
 import org.kevinparks.shipmenttracker.model.Shipment
-import kotlin.test.*
+import org.kevinparks.shipmenttracker.model.ShipmentType
+import org.kevinparks.shipmenttracker.strategy.LostUpdateStrategy
+import kotlin.test.assertEquals
 
 class LostUpdateStrategyTest {
 
     @Test
-    fun testApplyUpdate() {
-        val strategy = LostUpdateStrategy()
-        val shipment = Shipment("s1000")
-        val update = strategy.applyUpdate(shipment, emptyList(), 1234567890)
+    fun `applyUpdate should return ShippingUpdate with lost status`() {
+        val shipment = Shipment("lost001", createdAt = 1000L, shipmentType = ShipmentType.STANDARD)
+        shipment.addUpdate(org.kevinparks.shipmenttracker.model.ShippingUpdate("created", "in transit", 2000L))
 
-        assertEquals("lost", update.newStatus)
+        val strategy = LostUpdateStrategy()
+        val timestamp = 3000L
+        val result = strategy.applyUpdate(shipment, emptyList(), timestamp)
+
+        assertEquals("in transit", result.previousStatus)
+        assertEquals("lost", result.newStatus)
+        assertEquals(timestamp, result.timestamp)
     }
 }
-

@@ -6,6 +6,15 @@ import org.kevinparks.shipmenttracker.observer.ShipmentObserver
 import org.kevinparks.shipmenttracker.simulator.TrackingSimulator
 import java.text.SimpleDateFormat
 import java.util.*
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.statement.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
+import io.ktor.client.request.get
 
 class TrackerViewHelper : ShipmentObserver {
     var shipmentId by mutableStateOf("")
@@ -26,34 +35,55 @@ class TrackerViewHelper : ShipmentObserver {
     var expectedShipmentDeliveryDate by mutableStateOf("")
         private set
 
+    var isAbnormal by mutableStateOf(false)
+        private set
+
+    var anomalyReason by mutableStateOf<String?>(null)
+        private set
+
     private var currentShipment: Shipment? = null
 
-    fun trackShipment(id: String) {
-        val shipment = TrackingSimulator.findShipment(id)
-        if (shipment == null) {
-            // Set some "not found" message for UI to display
-            shipmentId = id
-            shipmentStatus = "Shipment not found"
-            shipmentLocation = ""
-            shipmentNotes = emptyList()
-            shipmentUpdateHistory = emptyList()
-            expectedShipmentDeliveryDate = ""
-            currentShipment = null
-            return
+    private val client = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json(Json { ignoreUnknownKeys = true})
         }
+    }
 
+    private var pollingJob: Job? = null
+
+    fun trackShipment(id: String) {
         stopTracking()
-        shipment.registerObserver(this)
 
-        shipmentId = shipment.id
-        currentShipment = shipment
-        updateStateFromShipment(shipment)
+        shipmentId = id
+        shipmentStatus = "Loading. . . "
+
+        pollingJob = CoroutineScope(Dispatchers.IO).launch {
+            while(isActive) {
+                try {
+                    val shipment: Shipment = client.get("http://localhost:8080/shipment/$id").body()
+
+                    withContext(Dispatchers.Main) {
+                        currentShipment = shipment
+                        updateStateFromShipment(shipment)
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        shipmentStatus = "Shipment not found"
+                        shipmentLocation = ""
+                        shipmentNotes = emptyList()
+                        shipmentUpdateHistory = emptyList()
+                        expectedShipmentDeliveryDate = ""
+                    }
+                }
+                delay(2000L)
+            }
+        }
     }
 
     fun stopTracking() {
-        currentShipment?.removeObserver(this)
         currentShipment = null
     }
+
 
     override fun onShipmentUpdated(shipment: Shipment) {
         updateStateFromShipment(shipment)
@@ -64,6 +94,8 @@ class TrackerViewHelper : ShipmentObserver {
         shipmentLocation = shipment.currentLocation
         shipmentNotes = shipment.getNotes()
         expectedShipmentDeliveryDate = formatTimestamp(shipment.expectedDeliveryDateTimestamp)
+        isAbnormal = shipment.isAbnormal
+        anomalyReason = shipment.anomalyReason
 
         shipmentUpdateHistory = shipment.getUpdateHistory().map {
             "Shipment went from ${it.previousStatus} to ${it.newStatus} on ${formatTimestamp(it.timestamp)}"

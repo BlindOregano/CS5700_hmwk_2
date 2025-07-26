@@ -13,6 +13,7 @@ class DelayedUpdateStrategy : UpdateStrategy {
 
         val newExpected = args[0].toLong()
         shipment.setExpectedDeliveryDate(newExpected)
+        shipment.checkForAnomalies()
 
         return ShippingUpdate(
             previousStatus = shipment.status,

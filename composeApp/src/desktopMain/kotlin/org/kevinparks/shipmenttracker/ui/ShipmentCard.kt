@@ -44,6 +44,15 @@ fun ShipmentCard(helper: TrackerViewHelper, onStopTracking: () -> Unit) {
                 }
             }
 
+            if (helper.isAbnormal) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Abnormality: ${helper.anomalyReason}"
+//                    color = Color.red,
+//                    fontweight = FontWeight.Bold
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(onClick = {historyExpanded = !historyExpanded}) {

@@ -1,17 +1,24 @@
 package org.kevinparks.shipmenttracker.strategy
 
+import org.junit.jupiter.api.Test
 import org.kevinparks.shipmenttracker.model.Shipment
-import kotlin.test.*
+import org.kevinparks.shipmenttracker.model.ShipmentType
+import org.kevinparks.shipmenttracker.strategy.CanceledUpdateStrategy
+import kotlin.test.assertEquals
 
 class CanceledUpdateStrategyTest {
 
     @Test
-    fun testApplyUpdate() {
-        val strategy = CanceledUpdateStrategy()
-        val shipment = Shipment("s1000")
-        val update = strategy.applyUpdate(shipment, emptyList(), 1234567890)
+    fun `applyUpdate returns ShippingUpdate with canceled status`() {
+        val shipment = Shipment("cancel123", createdAt = 123456L, shipmentType = ShipmentType.EXPRESS)
+        shipment.addNote("Preparing to cancel")
+        shipment.addUpdate(org.kevinparks.shipmenttracker.model.ShippingUpdate("created", "in transit", 2000L))
 
-        assertEquals("canceled", update.newStatus)
+        val strategy = CanceledUpdateStrategy()
+        val result = strategy.applyUpdate(shipment, emptyList(), 999999L)
+
+        assertEquals("in transit", result.previousStatus)
+        assertEquals("canceled", result.newStatus)
+        assertEquals(999999L, result.timestamp)
     }
 }
-

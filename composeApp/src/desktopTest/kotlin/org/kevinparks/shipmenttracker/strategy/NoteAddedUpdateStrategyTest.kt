@@ -1,16 +1,39 @@
 package org.kevinparks.shipmenttracker.strategy
 
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.kevinparks.shipmenttracker.model.Shipment
-import kotlin.test.*
+import org.kevinparks.shipmenttracker.model.ShipmentType
+import org.kevinparks.shipmenttracker.strategy.NoteAddedUpdateStrategy
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class NoteAddedUpdateStrategyTest {
 
     @Test
-    fun testApplyUpdate() {
-        val strategy = NoteAddedUpdateStrategy()
-        val shipment = Shipment("s1000")
-        val update = strategy.applyUpdate(shipment, listOf("Package was damaged"), 1234567890)
+    fun `applyUpdate should add note and preserve status`() {
+        val shipment = Shipment("note001", createdAt = 1000L, shipmentType = ShipmentType.STANDARD)
+        shipment.addUpdate(org.kevinparks.shipmenttracker.model.ShippingUpdate("created", "processing", 1500L))
 
-        assertEquals("created", update.newStatus)
+        val strategy = NoteAddedUpdateStrategy()
+        val timestamp = 2000L
+        val result = strategy.applyUpdate(shipment, listOf("Package delayed due to weather"), timestamp)
+
+        assertTrue("Package delayed due to weather" in shipment.getNotes())
+        assertEquals("processing", result.previousStatus)
+        assertEquals("processing", result.newStatus)
+        assertEquals(timestamp, result.timestamp)
+    }
+
+    @Test
+    fun `applyUpdate should throw if no note is provided`() {
+        val shipment = Shipment("note002", createdAt = 1000L, shipmentType = ShipmentType.BULK)
+        val strategy = NoteAddedUpdateStrategy()
+
+        val exception = assertThrows<IllegalArgumentException> {
+            strategy.applyUpdate(shipment, emptyList(), 2000L)
+        }
+
+        assertEquals("Missing note text", exception.message)
     }
 }

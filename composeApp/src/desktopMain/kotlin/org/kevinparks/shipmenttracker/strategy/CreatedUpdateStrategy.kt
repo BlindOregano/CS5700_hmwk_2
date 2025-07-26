@@ -11,7 +11,7 @@ class CreatedUpdateStrategy : UpdateStrategy {
 
         return ShippingUpdate(
             previousStatus = shipment.status,
-            newStatus = "created",
+            newStatus = shipment.status,
             timestamp = timestamp
         )
     }

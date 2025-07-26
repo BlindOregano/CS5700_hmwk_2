@@ -13,6 +13,7 @@ class ShippedUpdateStrategy : UpdateStrategy {
 
         val expectedTimestamp = args[0].toLong()
         shipment.setExpectedDeliveryDate(expectedTimestamp)
+        shipment.checkForAnomalies()
 
         return ShippingUpdate(
             previousStatus = shipment.status,
